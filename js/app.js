@@ -1,28 +1,65 @@
 let container
 let camera
+let controls
 let renderer
 let scene
 let mesh
 
 function init(){
-
-    container = document.querySelector("#scene-container")
+    container = document.querySelector('#scene-container')
 
     scene = new THREE.Scene()
-    scene.background = new THREE.Color('skyblue')
+    scene.background = new THREE.Color(0x8FBCD4)
 
-    const fov = 35
-    const aspect = container.clientWidth / container.clientHeight
-    const near = 0.1
-    const far = 100
+    createCamera()
+    createControls()
+    createLights()
+    createMeshes()
+    createRenderer()
 
-    camera = new THREE.PerspectiveCamera(fov, aspect, near, far)
-    camera.position.set(0,0,10)
+    renderer.setAnimationLoop(() => {
+        update()
+        render()
+    })
 
-    const geometry = new THREE.BoxBufferGeometry(2,2,2)
+}
 
+function createCamera(){
+
+    camera = new THREE.PerspectiveCamera(
+        35,
+        container.clientWidth / container.clientHeight,
+        0.1,
+        100,
+    )
+
+    camera.position.set(-4, 4, 10)
+
+}
+
+function createControls(){
+
+    controls = new THREE.OrbitControls(camera, container)
+
+}
+
+function createLights(){
+
+    const ambientLight = new THREE.HemisphereLight(0xddeeff, 0x202020, 5)
+
+    const mainLight = new THREE.DirectionalLight(0xffffff, 5)
+    mainLight.position.set(10, 10, 10)
+
+    scene.add(ambientLight, mainLight)
+
+}
+
+function createMeshes(){
+
+    const geometry = new THREE.BoxBufferGeometry(2, 2, 2)
     const textureLoader = new THREE.TextureLoader()
     const texture = textureLoader.load('textures/test.jpg')
+
     texture.encoding = THREE.sRGBEncoding
     texture.anisotropy = 16
 
@@ -33,42 +70,45 @@ function init(){
     mesh = new THREE.Mesh(geometry, material)
     scene.add(mesh)
 
-    const light = new THREE.DirectionalLight(0xffffff, 3.0)
-    light.position.set(10, 10, 10)
-    scene.add(light)
+}
 
-    renderer = new THREE.WebGLRenderer({antialias: true})
+function createRenderer(){
+
+    renderer = new THREE.WebGLRenderer({
+        antialias: true,
+    })
     renderer.setSize(container.clientWidth, container.clientHeight)
     renderer.setPixelRatio(window.devicePixelRatio)
+
     renderer.gammaFactor = 2.2
     renderer.gammaOutput = true
 
-    container.appendChild(renderer.domElement)
+    renderer.physicallyCorrectLights = true
 
-    renderer.setAnimationLoop(() => {
-        update()
-        render()
-    })
+    container.appendChild(renderer.domElement)
 
 }
 
 function update(){
-    mesh.rotation.z += 0.01
-    mesh.rotation.y += 0.01
-    mesh.rotation.x += 0.01
+
+
+
 }
 
 function render(){
+
     renderer.render(scene, camera)
+
 }
 
 function onWindowResize(){
+
     camera.aspect = container.clientWidth / container.clientHeight
     camera.updateProjectionMatrix()
     renderer.setSize(container.clientWidth, container.clientHeight)
+
 }
 
 window.addEventListener('resize', onWindowResize)
 
-// Initialize
 init()
