@@ -5,6 +5,9 @@ let renderer
 let scene
 let mesh
 
+const mixers = []
+const clock = new THREE.Clock()
+
 function init(){
     container = document.querySelector('#scene-container')
 
@@ -14,7 +17,7 @@ function init(){
     createCamera()
     createControls()
     createLights()
-    createMeshes()
+    loadModels()
     createRenderer()
 
     renderer.setAnimationLoop(() => {
@@ -33,7 +36,7 @@ function createCamera(){
         100,
     )
 
-    camera.position.set(-5, 5, 7)
+    camera.position.set(-1.5, 1.5, 6.5)
 
 }
 
@@ -54,87 +57,41 @@ function createLights(){
 
 }
 
-function createMaterials(){
+function loadModels(){
 
-    const body = new THREE.MeshStandardMaterial({
-        color: 0xff3333,
-        flatShading: true,
-    })
-    body.color.convertSRGBToLinear()
+    const loader = new THREE.GLTFLoader()
 
-    const detail = new THREE.MeshStandardMaterial({
-        color: 0x333333,
-        flatShading: true,
-    })
-    detail.color.convertSRGBToLinear()
+    const onLoad = (gltf, position) => {
 
-    return {
-        body,
-        detail,
+        const model = gltf.scene.children[0]
+        model.position.copy(position)
+
+        model.scale.set(0.03, 0.03, 0.03)
+
+        const animation = gltf.animations[0]
+
+        const mixer = new THREE.AnimationMixer(model)
+        mixers.push(mixer)
+
+        const action = mixer.clipAction(animation)
+        action.play()
+
+        scene.add(model)
+
     }
 
-}
+    const onProgress = () => {}
 
-function createGeometries(){
+    const onError = (errorMessage) => {console.log(errorMessage)}
 
-    const nose = new THREE.CylinderBufferGeometry(0.75, 0.75, 3, 12)
+    const parrotPosition = new THREE.Vector3(0, 0, 2.5)
+    loader.load('models/Parrot.glb', gltf => onLoad(gltf, parrotPosition), onProgress, onError)
 
-    const cabin = new THREE.BoxBufferGeometry(2, 2.25, 1.5)
+    const flamingoPosition = new THREE.Vector3(7.5, 0, -10)
+    loader.load('models/Flamingo.glb', gltf => onLoad(gltf, flamingoPosition), onProgress, onError)
 
-    const chimney = new THREE.CylinderBufferGeometry(0.3, 0.1, 0.5)
-
-    const wheel = new THREE.CylinderBufferGeometry(0.4, 0.4, 1.75, 16)
-    wheel.rotateX(Math.PI / 2)
-
-    return {
-        nose,
-        cabin,
-        chimney,
-        wheel,
-    }
-
-}
-
-function createMeshes(){
-
-    const train = new THREE.Group()
-    scene.add(train)
-
-    const materials = createMaterials()
-    const geometries = createGeometries()
-
-    const nose = new THREE.Mesh(geometries.nose, materials.body)
-    nose.rotation.z = Math.PI / 2
-    nose.position.x = -1
-
-    const cabin = new THREE.Mesh(geometries.cabin, materials.body)
-    cabin.position.set(1.5, 0.4, 0)
-
-    const chimney = new THREE.Mesh(geometries.chimney, materials.detail)
-    chimney.position.set(-2, 0.9, 0)
-
-    const smallWheelRear = new THREE.Mesh(geometries.wheel, materials.detail)
-    smallWheelRear.position.set(0, -0.5, 0)
-
-    const smallWheelCenter = smallWheelRear.clone()
-    smallWheelCenter.position.x = -1
-
-    const smallWheelFront = smallWheelRear.clone()
-    smallWheelFront.position.x = -2
-
-    const bigWheel = smallWheelRear.clone()
-    bigWheel.scale.set(2, 2, 1.25)
-    bigWheel.position.set(1.5, -0.1, 0)
-
-    train.add(
-        nose,
-        cabin,
-        chimney,
-        smallWheelRear,
-        smallWheelCenter,
-        smallWheelFront,
-        bigWheel,
-    )
+    const storkPosition = new THREE.Vector3(0, -2.5, -10)
+    loader.load('models/Stork.glb', gltf => onLoad(gltf, storkPosition), onProgress, onError)
 
 }
 
@@ -157,7 +114,11 @@ function createRenderer(){
 
 function update(){
 
+    const delta = clock.getDelta()
 
+    for(const mixer of mixers){
+        mixer.update(delta)
+    }
 
 }
 
